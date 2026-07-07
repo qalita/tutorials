@@ -31,5 +31,5 @@ Use the username and license key provided with your subscription when prompted.
 1. Run Docker Compose:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```

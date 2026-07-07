@@ -13,14 +13,14 @@ services:
       - REDIS_SERVER=cache
       - REDIS_PORT=6379
       - REDIS_PASSWORD=
-      - MAIL_USERNAME=test
-      - MAIL_PASSWORD=test
+      - MAIL_USERNAME=<smtp-username>
+      - MAIL_PASSWORD=<smtp-password>
       - MAIL_FROM=no-reply@example.com
-      - MAIL_PORT=1025
-      - MAIL_SERVER=mailpit
-      - MAIL_STARTTLS=False
+      - MAIL_PORT=587
+      - MAIL_SERVER=smtp.example.com
+      - MAIL_STARTTLS=True
       - MAIL_SSL_TLS=False
-      - MAIL_FROM_NAME="Dev Server"
+      - MAIL_FROM_NAME="Qalita Platform"
       - QALITA_INIT_SLEEP=3
       - QALITA_ADMIN_USERNAME=admin
       - QALITA_ADMIN_PASSWORD=password
@@ -30,10 +30,10 @@ services:
       - QALITA_LICENSE_REGISTRY_URL=https://registry.qalita.io
       - QALITA_ALGORITHM=HS256
       - QALITA_ACCESS_TOKEN_EXPIRE_MINUTES=240
-      - QALITA_ENV=DEMO
+      - QALITA_ENV=prod
       - QALITA_API_PORT=3080
       - QALITA_API_HOST=0.0.0.0
-      - QALITA_ORGANIZATION_NAME=Qalita Demo Localhost
+      - QALITA_ORGANIZATION_NAME=Qalita
       - QALITA_API_WORKER=4
       - QALITA_AUTH_MODE=table
       - QALITA_S3_URL=http://s3:8333
@@ -46,7 +46,6 @@ services:
       - db
       - cache
       - s3
-      - mailpit
   doc:
     # Published image is the nginx "deploy" stage: it serves the pre-built
     # static site on port 80 as root. The previous 3011:3000 + user:node
@@ -86,16 +85,6 @@ services:
       - ALLOW_EMPTY_PASSWORD=yes
     ports:
       - "6379:6379"
-  mailpit:
-    # Dev mail catcher — not part of the Qalita deliverables, so it is not
-    # mirrored into registry.qalita.io. Pulled from its public upstream image.
-    image: axllent/mailpit:v1.22.2
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-    environment:
-      MP_SMTP_AUTH_ACCEPT_ANY: 1
-      MP_SMTP_AUTH_ALLOW_INSECURE: 1
   s3:
     image: registry.qalita.io/qalita-io/seaweedfs:3.80
     ports:
