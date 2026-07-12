@@ -1,7 +1,7 @@
 name: qalita-platform-frontend-stack
 services:
   backend:
-    image: registry.qalita.io/qalita-io/platform-backend:2.16.2
+    image: registry.qalita.io/qalita/platform-backend:2.16.2
     ports:
       - "3080:3080"
     environment:
@@ -50,11 +50,11 @@ services:
     # Published image is the nginx "deploy" stage: it serves the pre-built
     # static site on port 80 as root. The previous 3011:3000 + user:node
     # matched the Docusaurus dev server, not this image.
-    image: registry.qalita.io/qalita-io/documentation:2.16.2
+    image: registry.qalita.io/qalita/documentation:2.16.2
     ports:
       - "3011:80"
   frontendprod:
-    image: registry.qalita.io/qalita-io/platform-frontend:2.16.2
+    image: registry.qalita.io/qalita/platform-frontend:2.16.2
     environment:
       - QALITA_API_URL=http://backend:3080
       - NEXT_TELEMETRY_DISABLED=1
@@ -67,7 +67,7 @@ services:
       - backend
       - doc
   db:
-    image: registry.qalita.io/qalita-io/postgresql:15.4.0
+    image: registry.qalita.io/qalita/postgresql:15.4.0
     tty: true
     ports:
       - "5432:5432"
@@ -79,14 +79,14 @@ services:
     volumes:
       - data:/bitnami/postgresql
   cache:
-    image: registry.qalita.io/qalita-io/redis:7.4.2
+    image: registry.qalita.io/qalita/redis:7.4.2
     hostname: cache
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     ports:
       - "6379:6379"
   s3:
-    image: registry.qalita.io/qalita-io/seaweedfs:3.80
+    image: registry.qalita.io/qalita/seaweedfs:3.80
     ports:
       - "8333:8333"
       - "8080:8080"

@@ -6,7 +6,7 @@ Instructions for AI agents working on this repository.
 
 **Qalita Tutorials** — Collection of tutorials, sample data, and integration guides for the Qalita platform.
 
-- **Organization** : `qalita-io`
+- **Organization** : `qalita`
 - **Documentation** : https://doc.qalita.io/
 - **Content** : Markdown, sample datasets, configuration files
 
