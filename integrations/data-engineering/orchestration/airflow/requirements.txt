@@ -1,4 +1,4 @@
 # Minimal dependencies to run the example DAG and custom operator
-apache-airflow==2.11.1
+apache-airflow==2.11.2
 python-dotenv>=1.2.2
 qalita>=2.3.0
