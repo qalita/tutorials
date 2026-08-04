@@ -1,0 +1,39 @@
+version: 2
+
+# This repo had no Dependabot configuration at all, so it received only
+# security updates — which Dependabot now batches into grouped PRs. Grouped
+# PRs ignore the `@dependabot ignore this major version` command ("Closing it
+# will not ignore any of these versions in future pull requests"), so the
+# Airflow 2 -> 3 major kept coming back: #11 had to strip it out by hand, and
+# #12 proposed it again a few weeks later.
+#
+# The entry below exists to give that major somewhere to be declined durably.
+# It is deliberately scoped to the one directory that has the problem rather
+# than to every requirements.txt in the repo: the other six keep their
+# security-only behaviour, so this does not open a monthly PR front across all
+# the tutorials.
+updates:
+  - package-ecosystem: "pip"
+    directory: "/integrations/data-engineering/orchestration/airflow"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "deps(airflow)"
+    labels:
+      - "dependencies"
+      - "python"
+    groups:
+      airflow-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Airflow 3 changes the DAG execution model. This repo has no CI, so
+      # nothing would catch a tutorial that stops working — the upgrade needs
+      # a deliberate rewrite of the example DAG and custom operator, not a
+      # version bump. Patches and minors on 2.x still come through.
+      - dependency-name: "apache-airflow"
+        update-types:
+          - "version-update:semver-major"
