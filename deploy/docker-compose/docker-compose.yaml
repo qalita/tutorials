@@ -4,6 +4,10 @@ services:
     image: registry.qalita.io/qalita/platform-backend:2.16.2
     ports:
       - "3080:3080"
+      # gRPC for Worker communication. QALITA_GRPC_PORT only changes the
+      # published (host) port; the server always binds 50051 inside the
+      # container. Do NOT inject the variable into the container environment.
+      - "${QALITA_GRPC_PORT:-50051}:50051"
     environment:
       - POSTGRESQL_PASSWORD=password
       - POSTGRESQL_USERNAME=qalita
