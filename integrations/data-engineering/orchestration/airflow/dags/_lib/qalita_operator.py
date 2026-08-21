@@ -4,8 +4,7 @@ import io
 from contextlib import redirect_stdout, redirect_stderr
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from airflow.models import BaseOperator
-from airflow.utils.context import Context
+from airflow.sdk import BaseOperator, Context
 
 # Use qalita as a Python package (tools-cli). We'll programmatically invoke the Click CLI.
 from qalita.__main__ import cli as qalita_cli, add_commands_to_cli

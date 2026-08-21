@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from airflow import DAG
-from airflow.operators.bash import BashOperator
+from airflow.providers.standard.operators.bash import BashOperator
+from airflow.sdk import DAG
 
 from _lib.qalita_operator import QalitaOperator
 
@@ -29,24 +29,26 @@ with DAG(
         command=["version"],
     )
 
-    # Prepare agent context and verify connectivity
-    qalita_agent_login = QalitaOperator(
-        task_id="qalita_agent_login",
-        command=["agent", "login"],
+    # Register the worker and verify connectivity
+    qalita_worker_login = QalitaOperator(
+        task_id="qalita_worker_login",
+        command=["worker", "login"],
         env={
-            "QALITA_AGENT_NAME": "airflow-agent",
-            "QALITA_AGENT_MODE": "job",
+            "QALITA_WORKER_NAME": "airflow-worker",
+            "QALITA_WORKER_MODE": "job",
             # Expected to be set via Airflow connections/variables or .env
-            # QALITA_AGENT_TOKEN, QALITA_AGENT_ENDPOINT
+            # QALITA_WORKER_TOKEN, QALITA_WORKER_ENDPOINT
         },
     )
 
-    # Example agent job run using documented flags
+    # Example one-shot job run using documented flags.
+    # "job" mode runs a single job and exits, which is what a DAG task wants;
+    # "worker" mode would loop waiting for work and never let the task finish.
     # Requires valid IDs; replace with your own or parameterize via Variables
-    qalita_agent_run = QalitaOperator(
-        task_id="qalita_agent_run",
+    qalita_worker_run = QalitaOperator(
+        task_id="qalita_worker_run",
         command=[
-            "agent",
+            "worker",
             "run",
             "-s",
             "{{ var.json.qalita_params.source_id | default('1') }}",
@@ -54,7 +56,7 @@ with DAG(
             "{{ var.json.qalita_params.pack_id | default('1') }}",
         ],
         env={
-            "QALITA_AGENT_MODE": "job",
+            "QALITA_WORKER_MODE": "job",
         },
     )
 
@@ -68,5 +70,5 @@ with DAG(
         command=["pack", "list"],
     )
 
-    extract >> transform >> qalita_cli_version >> qalita_agent_login
-    qalita_agent_login >> [qalita_source_list, qalita_pack_list] >> qalita_agent_run
+    extract >> transform >> qalita_cli_version >> qalita_worker_login
+    qalita_worker_login >> [qalita_source_list, qalita_pack_list] >> qalita_worker_run

@@ -42,7 +42,7 @@ Next steps:
 1) Install dependencies with Airflow constraints (recommended):
 
 ```bash
-export AIRFLOW_VERSION=2.9.3
+export AIRFLOW_VERSION=3.3.0
 export PYTHON_VERSION="$(python -c 'import sys; print("".join(map(str, sys.version_info[:2])))')"
 pip install -r requirements.txt --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
 ```
@@ -55,10 +55,11 @@ cp .env.sample .env || cp .env.example .env
 
 Key variables (env or Airflow Variables):
 
-- `QALITA_AGENT_ENDPOINT` — API base URL (e.g., `http://localhost:3080`)
-- `QALITA_AGENT_TOKEN` — API token
-- `QALITA_AGENT_NAME` — Optional name for this agent (default: airflow-agent)
-- `QALITA_AGENT_MODE` — `job` or `worker` (DAG uses `job`)
+- `QALITA_WORKER_ENDPOINT` — API base URL (e.g., `http://localhost:3080`)
+- `QALITA_WORKER_TOKEN` — API token, from a user holding at least the Data Engineer role
+- `QALITA_WORKER_NAME` — Optional name for this worker (default: airflow-worker)
+- `QALITA_WORKER_MODE` — `job` or `worker`. The DAG uses `job`: it runs a single job and
+  exits, whereas `worker` would loop waiting for work and never let the task finish.
 
 3) Place the example DAG in your Airflow `dags/` folder:
 
@@ -69,9 +70,9 @@ Key variables (env or Airflow Variables):
 The DAG uses the `qalita` Python package from PyPI (Click-based CLI) via `QalitaOperator`:
 
 - `version`: shows CLI version
-- `agent login`: registers the agent context
+- `worker login`: registers the worker with the platform
 - `source list`, `pack list`: helper discovery
-- `agent run -s <source_id> -p <pack_id>`: runs a job for a given source/pack
+- `worker run -s <source_id> -p <pack_id>`: runs one job for a given source/pack
 
 Optional: set an Airflow Variable used by the DAG for IDs
 
