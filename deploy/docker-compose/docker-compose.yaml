@@ -1,7 +1,7 @@
 name: qalita-platform-frontend-stack
 services:
   backend:
-    image: registry.qalita.io/qalita/platform-backend:2.16.2
+    image: registry.qalita.io/qalita/platform-backend:2.18.0
     ports:
       - "3080:3080"
       # gRPC for Worker communication. QALITA_GRPC_PORT only changes the
@@ -54,11 +54,11 @@ services:
     # Published image is the nginx "deploy" stage: it serves the pre-built
     # static site on port 80 as root. The previous 3011:3000 + user:node
     # matched the Docusaurus dev server, not this image.
-    image: registry.qalita.io/qalita/documentation:2.16.2
+    image: registry.qalita.io/qalita/documentation:2.18.0
     ports:
       - "3011:80"
   frontendprod:
-    image: registry.qalita.io/qalita/platform-frontend:2.16.2
+    image: registry.qalita.io/qalita/platform-frontend:2.18.0
     environment:
       - QALITA_API_URL=http://backend:3080
       - NEXT_TELEMETRY_DISABLED=1
@@ -70,6 +70,74 @@ services:
     depends_on:
       - backend
       - doc
+  # The worker executes the data-quality packs. It is behind the "worker"
+  # profile because it needs QALITA_WORKER_TOKEN, which only exists once the
+  # platform is up and a user has created an API token: a cold `docker compose
+  # up -d` must not be blocked by a credential nobody can have yet. Setting
+  # COMPOSE_PROFILES=worker in .env (see .env.example) makes it part of the
+  # default stack from then on.
+  worker:
+    profiles: ["worker"]
+    image: registry.qalita.io/qalita/cli:2.18.3
+    # 'worker login' registers the worker and writes ~/.qalita/.worker; 'worker
+    # run' needs that file for its REST fallback. Do NOT chain them with ';': a
+    # failed login would then be followed by a run whose only symptom is a
+    # misleading "can't load data file" much further down the logs.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        # depends_on only waits for the backend container to start, not for it
+        # to have migrated and opened its port, so the first logins legitimately
+        # fail. Retry, but give up loudly rather than hide a bad token behind an
+        # endless loop.
+        attempt=1
+        until qalita worker login; do
+          if [ "$$attempt" -ge 30 ]; then
+            echo "[qalita] 'qalita worker login' has been failing for 5 minutes." >&2
+            echo "[qalita] Usual causes: QALITA_WORKER_TOKEN empty or expired, its user lacking" >&2
+            echo "[qalita] the Data Engineer role, or the backend unreachable at QALITA_WORKER_ENDPOINT." >&2
+            # Exiting rather than looping forever: the restart policy brings the
+            # container back, and the reason above is reprinted every cycle
+            # instead of scrolling past once.
+            exit 1
+          fi
+          echo "[qalita] worker login failed (attempt $$attempt/30) - the backend may still be starting; retrying in 10s." >&2
+          attempt=$$((attempt + 1))
+          sleep 10
+        done
+        # Hand back to the image entrypoint so QALITA_WORKER_UI keeps working.
+        exec /app/entrypoint.sh worker run
+    environment:
+      - QALITA_WORKER_NAME=${QALITA_WORKER_NAME:-worker-1}
+      # "worker" loops waiting for jobs; "job" runs a single job and exits.
+      - QALITA_WORKER_MODE=worker
+      # A short service name (no dot) makes the CLI derive the gRPC target as
+      # backend:50051 on the compose network, so the published gRPC host port
+      # plays no part here. Set QALITA_GRPC_ENDPOINT to override that guess.
+      - QALITA_WORKER_ENDPOINT=http://backend:3080
+      # User-scoped API token, from a platform user with at least the Data
+      # Engineer role. Put it in a .env file next to this compose file.
+      - QALITA_WORKER_TOKEN=${QALITA_WORKER_TOKEN:-}
+      # Set to true to also serve the worker UI (publish 7070 below).
+      - QALITA_WORKER_UI=false
+    volumes:
+      # Worker state: registration file, pack cache and job workspaces. Mount
+      # the HOME, not ~/.qalita. Docker seeds a named volume from the image
+      # directory it covers, and only /home/qalita exists there, owned by the
+      # non-root runtime user (uid 10001). A volume on /home/qalita/.qalita is
+      # created empty and root-owned, and every worker write then fails with
+      # EACCES - the Helm chart papers over that with fsGroup, which compose
+      # has no equivalent for.
+      - workerdata:/home/qalita
+      # Local files the worker should be able to read as a source. The Helm
+      # chart mounts its PVC at the same place.
+      # - ./data:/data:ro
+    # ports:
+    #   - "7070:7070"   # worker UI, when QALITA_WORKER_UI=true
+    # The worker must come back on its own after a backend restart or a crash.
+    restart: unless-stopped
+    depends_on:
+      - backend
   db:
     image: registry.qalita.io/qalita/postgresql:15.4.0
     tty: true
@@ -102,3 +170,4 @@ services:
 volumes:
   data:
   datas3:
+  workerdata:
