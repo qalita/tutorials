@@ -1,3 +1,7 @@
 # Local deployment settings. `.env.example` is the tracked template; the `.env`
 # derived from it carries a real API token and must never be committed.
 .env
+
+# Python bytecode from running the tutorials locally.
+__pycache__/
+*.py[cod]
