@@ -78,7 +78,7 @@ services:
   # default stack from then on.
   worker:
     profiles: ["worker"]
-    image: registry.qalita.io/qalita/cli:2.18.3
+    image: registry.qalita.io/qalita/cli:2.18.4
     # 'worker login' registers the worker and writes ~/.qalita/.worker; 'worker
     # run' needs that file for its REST fallback. Do NOT chain them with ';': a
     # failed login would then be followed by a run whose only symptom is a
