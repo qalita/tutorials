@@ -40,6 +40,12 @@ services:
       - QALITA_ORGANIZATION_NAME=Qalita
       - QALITA_API_WORKER=4
       - QALITA_AUTH_MODE=table
+      # API surfaces served by the backend. A 3.x frontend bootstraps its
+      # session from /api/v3/session, while the workers still speak v1/v2, so
+      # "dual" is the only mode that serves both. Backend >= 3.0.0 defaults to
+      # dual; it is set explicitly here so the value is visible and survives
+      # any future change of default.
+      - QALITA_API_MODE=dual
       - QALITA_S3_URL=http://s3:8333
       - QALITA_S3_KEY_ID=******************
       - QALITA_S3_KEY_SECRET=***********************

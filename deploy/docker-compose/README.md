@@ -115,3 +115,39 @@ docker compose up -d
 
 Worker upgrades are safe to do on their own: the state volume survives, and the
 worker re-registers under the same name.
+
+#### Upgrading from 2.x to 3.x
+
+The 3.0.0 platform brings no database migration: the backend still runs
+`alembic upgrade head` at start and finds the schema already at head, so the
+data volume needs nothing. What changes is the frontend, which now bootstraps
+its session from `GET /api/v3/session`, a route the backend only serves in the
+`dual` API mode.
+
+1. Set `QALITA_API_MODE=dual` on the `backend` service (already present in the
+   compose file above). Backend 3.0.0 defaults to `dual`, so the line is a
+   safety net, not a requirement; `legacy` (v1/v2 only) breaks the frontend.
+2. Move `backend` and `frontendprod` to the same 3.x tag **together** - a 3.x
+   frontend cannot work against a 2.x backend, and a 2.x frontend loses its
+   login flow against a `v3`-only backend.
+3. Move the worker(s) to `cli:3.0.1` or later. The 3.0.x CLI still speaks the
+   v1/v2 API, the worker state volume stays valid and the worker re-registers
+   under its existing id.
+4. Leave `doc` on the latest tag of the documentation image: it is versioned
+   independently from the platform.
+5. `docker compose pull && docker compose up -d`, then check:
+
+   ```bash
+   curl -s http://localhost:3080/api/v1/version            # {"version":"3.0.0"}
+   curl -s -o /dev/null -w '%{http_code}\n' http://localhost:3080/api/v3/session
+   # 401 = route served (dual), 404 = backend still in legacy mode
+   docker compose logs backend | grep 'API mode'           # API mode: dual
+   docker compose logs worker  | grep registered
+   ```
+
+Users are asked to sign in again once: sessions opened on 2.x are not carried
+over by the v3 session boundary. Worker API tokens created on 2.x keep working.
+
+Rolling back is the reverse tag change on `backend` and `frontendprod`
+together (and the worker if needed), then `docker compose up -d`: no schema
+change means the 2.x backend starts on the same data volume.
