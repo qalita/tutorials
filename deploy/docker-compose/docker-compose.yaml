@@ -38,7 +38,10 @@ services:
       - QALITA_API_PORT=3080
       - QALITA_API_HOST=0.0.0.0
       - QALITA_ORGANIZATION_NAME=Qalita
-      - QALITA_API_WORKER=4
+      # Keep at 1: the gRPC server the workers connect to runs inside the API
+      # process, and every extra process answers the requests that need a
+      # worker with 503 "No worker available" (qalita/platform#189).
+      - QALITA_API_WORKER=1
       - QALITA_AUTH_MODE=table
       # API surfaces served by the backend. A 3.x frontend bootstraps its
       # session from /api/v3/session, while the workers still speak v1/v2, so
